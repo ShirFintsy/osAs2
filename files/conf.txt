@@ -1,0 +1,3 @@
+/home/shir/CLionProjects/osAs2/files/students
+/home/shir/CLionProjects/osAs2/files/io/input.txt
+/home/shir/CLionProjects/osAs2/files/io/correct_output.txt
