@@ -283,46 +283,63 @@ void readingFromFD(char from[], char path[], char input[], char output[]) {
     }
 }
 
-void getGivenPath(char path[], char dest[]) {
-    //printf("path before: %s\n", path);
-    strcpy(dest, path);
-    unsigned long len = strlen(path);
-    //printf("path len: %lu\n", len);
-    for (unsigned long i = len; i > 0; --i) {
-        //printf("dest[%lu] = %c\n", i,dest[i]);
-        if (dest[i] != '/') {
-            dest[i] = '\0';
-        } else {
-            dest[i] = '\0';
-            break;
+void checkIdUsersIsOnlyDirs(char path[]) {
+    DIR *dip;
+    struct dirent *dit;
+    if ((dip = opendir(path)) == NULL) {
+        char error[] = "Error in opendir\n";
+        write(1, error, strlen(error));
+        exit(-1);
+    }
+
+    int i = 0;
+    // run on all subdirectory in path in line 1 of configuration file
+    while((dit = readdir(dip)) != NULL) {
+        char absPath[150] = "";
+        getAbsPath(dit->d_name, path, absPath);
+        // check that the directory is not . or .. or file:
+        if (strcmp(dit->d_name, ".") != 0 && strcmp(dit->d_name, "..") != 0 && isDir(absPath) == 0) {
+            char error[] = "Not a valid directory\n";
+            write(1, error, strlen(error));
+            exit(-1);
         }
     }
-    //printf("path after: %s\n", dest);
+    // closing the users directory we got from config file
+    if (closedir(dip) < 0){
+        char error[] = "Error in closedir\n";
+        write(1, error, strlen(error));
+        exit(-1);
+    }
 }
 
 int main(int argc, char *argv[]) {
     DIR *dip;
     struct dirent *dit;
-    char inputFile[150], outputFile[150], pathBuffer[150], path[150], cwd[PATH_MAX];
+    char inputCpy[150], outputCpy[150], pathCpy[150];
+    char inputFile[150], outputFile[150], path[150], cwd[PATH_MAX];
     if (argc < 2)
         exit(-1);
-//    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-//        char error[] = "Error in getcwd\n";
-//        write(1, error, strlen(error));
-//    }
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        char error[] = "Error in getcwd\n";
+        write(1, error, strlen(error));
+    }
 
-    readingFromFD(argv[1], path, inputFile, outputFile); // set the path of the files given.
-//    printf("before abs: %s\n", pathBuffer);
-//    getGivenPath(argv[1], cwd);
-//    printf("current given path: %s\n", cwd);
-//    getAbsPath(pathBuffer, cwd, path);
-//    printf("after abs: %s\n", path);
+    readingFromFD(argv[1], pathCpy, inputCpy, outputCpy); // set the path of the files given.
+    // init absolute path if needed:
+    getAbsPath(pathCpy, cwd, path);
+    getAbsPath(inputCpy, cwd, inputFile);
+    getAbsPath(outputCpy, cwd, outputFile);
+
     // check if directory is exists and open it:
     if ((dip = opendir(path)) == NULL) {
         char error[] = "Error in opendir\n";
         write(1, error, strlen(error));
         exit(-1);
     }
+
+    //check if user directory contain only directories:
+    checkIdUsersIsOnlyDirs(path);
+
 
     int i = 0;
     // run on all subdirectory in path in line 1 of configuration file
@@ -336,7 +353,6 @@ int main(int argc, char *argv[]) {
             //writeToResults(name);
             i++;
             handelSubdir(absPath, name, inputFile, outputFile);
-            printf("finished\n");
         }
     }
     // closing the directory we got from config file

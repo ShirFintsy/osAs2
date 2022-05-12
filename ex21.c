@@ -18,7 +18,6 @@ void checkIfFile(char *argv[]) {
         if (S_ISREG(fileStat.st_mode) == 0)
             exit(0);
     }
-
 }
 
 /*
@@ -49,6 +48,7 @@ int emptyChars(char c1, char c2) {
 int main(int argc, char *argv[]) {
     if (argc != 3)
         exit(0);
+
     checkIfFile(argv); // make sure we got files paths
     int fd1, fd2;
 
@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     // the flags are for notify not to read another char because the last char was empty char.
     // ri are for the read
     // similarity is for notify that the files may be similar (but defiantly not identical)
-    int flag1 = 0, flag2 = 0, r1, r2, similarity = 0, count1 = 0, count2;
+    int flag1 = 0, flag2 = 0, r1, r2, similarity = 0, count1 = 0, count2 = 0;
     char buff1[100], buff2[100];
     while(1) {
         if (flag1 == 0) {
@@ -93,12 +93,25 @@ int main(int argc, char *argv[]) {
 
         // if only one of the file ended then they are not equal (not the same length)
         if (r1 == 0 || r2 == 0){
-            if (emptyChars(buff1[count1], buff2[count2]) == 1 || emptyChars(buff1[count1], buff2[count2]) == 2) {
-                //printf("return 3!\n");
-                return 3;
+            if (emptyChars(buff1[count1], buff2[count2]) == 1) {
+                flag2 = 1;
+                similarity == 1;
             }
+            else if (emptyChars(buff1[count1], buff2[count2]) == 2) {
+                flag1 = 1;
+                similarity == 1;
+            }else{
+                //printf("return 2!\n");
+                return 2;
+            }
+
+//            if (emptyChars(buff1[count1], buff2[count2]) == 1 || emptyChars(buff1[count1], buff2[count2]) == 2) {
+//                printf("return 3!\n");
+//                return 3;
+//
+//            }
             //printf("return 2!\n");
-            return 2;
+            //return 2;
         }
 
         // the chars are not equals
