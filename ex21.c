@@ -11,7 +11,8 @@
  */
 void checkIfFile(char *argv[]) {
     struct stat fileStat;
-    for (int i = 0; i < 2; ++i) {
+    int i;
+    for (i = 0; i < 2; ++i) {
         if (stat(argv[i], &fileStat) < 0)
             exit(0);
         // if one of the arguments to main is not file
@@ -58,11 +59,12 @@ int main(int argc, char *argv[]) {
     fd2 = open(argv[2], O_RDONLY);
     if (fd2 < 0)
         return -1;
+
     // the flags are for notify not to read another char because the last char was empty char.
     // ri are for the read
     // similarity is for notify that the files may be similar (but defiantly not identical)
     int flag1 = 0, flag2 = 0, r1, r2, similarity = 0, count1 = 0, count2 = 0;
-    char buff1[100], buff2[100];
+    char buff1[10000], buff2[10000];
     while(1) {
         if (flag1 == 0) {
             r1 = read(fd1 , &buff1[count1], sizeof(char));
@@ -77,16 +79,12 @@ int main(int argc, char *argv[]) {
                 return -1;
         }
         flag2 = 0;
-        //printf("all char-->  char1: \"%c\", char2: \"%c\"\n", buff1[count1], buff2[count2]);
-        //printf("   all reads: fisrt: %d, second: %d\n", r1, r2);
         // if both files finished reading at the same time - they are identical
 
         if (r1 == 0 && r2 == 0){
             if (similarity == 1) {
-                //printf("return 3!\n");
                 return 3;
             }
-            //printf("return 1!\n");
             return 1;
         }
 
@@ -101,30 +99,18 @@ int main(int argc, char *argv[]) {
                 flag1 = 1;
                 similarity == 1;
             }else{
-                //printf("return 2!\n");
                 return 2;
             }
-
-//            if (emptyChars(buff1[count1], buff2[count2]) == 1 || emptyChars(buff1[count1], buff2[count2]) == 2) {
-//                printf("return 3!\n");
-//                return 3;
-//
-//            }
-            //printf("return 2!\n");
-            //return 2;
         }
 
         // the chars are not equals
         if (buff1[count1] != buff2[count2]) {
-            //printf("in comp--> char1: \"%c\", char2: \"%c\"\n",buff1[count1], buff2[count2]);
             if (emptyChars(buff1[count1], buff2[count2]) == 1) { // c1 is empty char
-                //printf("first empty--> char1: \"%c\", char2: \"%c\"\n",buff1[count1], buff2[count2]);
                 flag2 = 1;
                 similarity = 1;
                 count2--;
 
             } else if (emptyChars(buff1[count1], buff2[count2]) == 2) {// c2 is empty char
-                //printf("second empty--> char1: \"%c\", char2: \"%c\"\n",buff1[count1], buff2[count2]);
                 flag1 = 1;
                 similarity = 1;
                 count1--;

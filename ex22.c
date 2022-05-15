@@ -83,6 +83,7 @@ int compileComp(char outputFile[]) {
 
 // use ex21 to compare between the output file and the expected output file given.
 void checkSimilarity(char name[],char outputFile[]) {
+    //printf("in checking smi\n");
     int returnValue = compileComp(outputFile);
     if (returnValue == 1)
         writeToResults(strcat(name,"100,EXCELLENT\n"));
@@ -138,7 +139,7 @@ void compareFiles(char name[], char inputFile[], char outputFile[]) {
 }
 
 int handelFile(char path[]) {
-    int fdError = open("errors.txt", O_WRONLY | O_CREAT, 0644);
+    int fdError = open("errors.txt", O_WRONLY | O_CREAT | O_APPEND , 0777);
     if (fdError < 0){
         char error[] = "Error in open\n";
         write(1, error, strlen(error));
@@ -196,7 +197,7 @@ void handelSubdir(char path[], char name[], char input[], char output[]) {
         // get absolute path
         char absSubPath[150] = "";
         getAbsPath(dit->d_name, path, absSubPath);
-        printf("current file: %s\n", dit->d_name);
+        //printf("current file: %s\n", dit->d_name);
         // check that it's not a file or the directory is . or .. and make sure it's a C file
         if (strcmp(dit->d_name, ".") != 0 && strcmp(dit->d_name, "..") != 0 && isDir(absSubPath) == 0
         && isCFile(absSubPath) == 1) {
@@ -241,6 +242,18 @@ void checkValidation(char path[], int flag) {
 }
 
 void readingFromFD(char from[], char path[], char input[], char output[]) {
+    char inputCpy[150], outputCpy[150], pathCpy[150], cwd[150], fromAbs[150];
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        char error[] = "Error in getcwd\n";
+        write(1, error, strlen(error));
+    }
+
+
+
+    getAbsPath(from, cwd, fromAbs);
+    //printf("from path: %s\n", from);
+
+
     int fd = open(from, O_RDONLY);
     if (fd < 0) {
         char error[] = "Error in open\n";
@@ -248,33 +261,38 @@ void readingFromFD(char from[], char path[], char input[], char output[]) {
     }
     int count = 0;
     // get the path given from configuration file - first line.
-    while (read(fd , &path[count], sizeof(char)) > 0) {
-        if (path[count] == '\n') {
-            path[count] = '\0';
+    while (read(fd , &pathCpy[count], sizeof(char)) > 0) {
+        if (pathCpy[count] == '\n') {
+            pathCpy[count] = '\0';
             break;
         }
         count++;
     }
+    //printf("before path: %s\n", pathCpy);
+    getAbsPath(pathCpy, cwd, path);
+    //printf("after path: %s\n", path);
     checkValidation(path, 1);
     count = 0;
     // get the path given from configuration file - second line.
-    while (read(fd , &input[count], sizeof(char)) > 0) {
-        if (input[count] == '\n') {
-            input[count] = '\0';
+    while (read(fd , &inputCpy[count], sizeof(char)) > 0) {
+        if (inputCpy[count] == '\n') {
+            inputCpy[count] = '\0';
             break;
         }
         count++;
     }
+    getAbsPath(inputCpy, cwd, input);
     checkValidation(input, 2);
     count = 0;
     // get the path given from configuration file - third line.
-    while (read(fd , &output[count], sizeof(char)) > 0) {
-        if (output[count] == '\n') {
-            output[count] = '\0';
+    while (read(fd , &outputCpy[count], sizeof(char)) > 0) {
+        if (outputCpy[count] == '\n') {
+            outputCpy[count] = '\0';
             break;
         }
         count++;
     }
+    getAbsPath(outputCpy, cwd, output);
     checkValidation(output, 3);
 
     if (close(fd) < 0) {
@@ -315,20 +333,15 @@ void checkIdUsersIsOnlyDirs(char path[]) {
 int main(int argc, char *argv[]) {
     DIR *dip;
     struct dirent *dit;
-    char inputCpy[150], outputCpy[150], pathCpy[150];
+
     char inputFile[150], outputFile[150], path[150], cwd[PATH_MAX];
     if (argc < 2)
         exit(-1);
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        char error[] = "Error in getcwd\n";
-        write(1, error, strlen(error));
-    }
 
-    readingFromFD(argv[1], pathCpy, inputCpy, outputCpy); // set the path of the files given.
+
+    readingFromFD(argv[1], path, inputFile, outputFile); // set the path of the files given.
     // init absolute path if needed:
-    getAbsPath(pathCpy, cwd, path);
-    getAbsPath(inputCpy, cwd, inputFile);
-    getAbsPath(outputCpy, cwd, outputFile);
+
 
     // check if directory is exists and open it:
     if ((dip = opendir(path)) == NULL) {
@@ -348,9 +361,8 @@ int main(int argc, char *argv[]) {
         getAbsPath(dit->d_name, path, absPath);
         // check that the directory is not . or .. or file:
         if (strcmp(dit->d_name, ".") != 0 && strcmp(dit->d_name, "..") != 0 && isDir(absPath) == 1) {
-            printf("NAME: %s\n", dit->d_name); //debug
+            //printf("NAME: %s\n", dit->d_name); //debug
             char* name = strcat(dit->d_name, ",");
-            //writeToResults(name);
             i++;
             handelSubdir(absPath, name, inputFile, outputFile);
         }
